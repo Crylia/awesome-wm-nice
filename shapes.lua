@@ -3,7 +3,7 @@
 -- ============================================================
 --
 local lgi = require("lgi")
-local colors = require("nice.colors")
+local colors = require("src.lib.nice.colors")
 local hex2rgb = colors.hex2rgb
 local darken = colors.darken
 local cairo = lgi.cairo
@@ -83,9 +83,9 @@ local function flip(surface, axis)
     local cr = cairo.Context.create(flipped)
     local source_pattern = cairo.Pattern.create_for_surface(surface)
     if axis == "horizontal" then
-        source_pattern.matrix = cairo.Matrix {xx = -1, yy = 1, x0 = width}
+        source_pattern.matrix = cairo.Matrix { xx = -1, yy = 1, x0 = width }
     elseif axis == "vertical" then
-        source_pattern.matrix = cairo.Matrix {xx = 1, yy = -1, y0 = height}
+        source_pattern.matrix = cairo.Matrix { xx = 1, yy = -1, y0 = height }
     elseif axis == "both" then
         source_pattern.matrix = cairo.Matrix {
             xx = -1,
@@ -135,6 +135,7 @@ local function create_corner_top_left(args)
         cr.antialias = cairo.Antialias.BEST
         cr:stroke()
     end
+
     -- Outer dark stroke
     add_stroke {
         offset_x = args.stroke_offset_outer,
@@ -175,6 +176,7 @@ local function create_edge_top_middle(args)
         cr:set_source_rgb(hex2rgb(stroke_color))
         cr:stroke()
     end
+
     -- Inner light stroke
     add_stroke(
         args.stroke_width_inner, args.stroke_offset_inner,
@@ -228,7 +230,7 @@ local function text_label(args)
     local kern = args.font.kerning or 0
     local ext = cr:text_extents(text)
     surface = cairo.ImageSurface.create(
-                  "ARGB32", ext.width + string.len(text) * kern, ext.height)
+        "ARGB32", ext.width + string.len(text) * kern, ext.height)
     cr = cairo.Context.create(surface)
     set_font(cr, args.font)
     cr:move_to(0, ext.height)
@@ -236,10 +238,10 @@ local function text_label(args)
     -- cr:show_text(text)
     text:gsub(
         ".", function(c)
-            -- do something with c
-            cr:show_text(c)
-            cr:rel_move_to(kern, 0)
-        end)
+        -- do something with c
+        cr:show_text(c)
+        cr:rel_move_to(kern, 0)
+    end)
     return surface
 end
 

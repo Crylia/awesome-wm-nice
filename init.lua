@@ -63,13 +63,13 @@ local pixbuf_get_from_window = gdk.pixbuf_get_from_window
 -- => nice
 -- ============================================================
 -- Colors
-local colors = require("nice.colors")
+local colors = require("src.lib.nice.colors")
 local color_darken = colors.darken
 local color_lighten = colors.lighten
 local is_contrast_acceptable = colors.is_contrast_acceptable
 local relative_luminance = colors.relative_luminance
 -- Shapes
-local shapes = require("nice.shapes")
+local shapes = require("src.lib.nice.shapes")
 local create_corner_top_left = shapes.create_corner_top_left
 local create_edge_left = shapes.create_edge_left
 local create_edge_top_middle = shapes.create_edge_top_middle
@@ -93,7 +93,9 @@ local titlebar_gradient_c1_lighten = 1
 local titlebar_gradient_c2_offset = 0.5
 
 local function rel_lighten(lum) return lum * 90 + 10 end
+
 local function rel_darken(lum) return -(lum * 70) + 100 end
+
 -- ------------------------------------------------------------
 
 local nice = {
@@ -118,9 +120,9 @@ _private.titlebar_margin_left = 0
 _private.titlebar_margin_right = 0
 _private.titlebar_font = "Sans 11"
 _private.titlebar_items = {
-    left = {"close", "minimize", "maximize"},
+    left = { "close", "minimize", "maximize" },
     middle = "title",
-    right = {"sticky", "ontop", "floating"},
+    right = { "sticky", "ontop", "floating" },
 }
 _private.context_menu_theme = {
     bg_focus = "#aed9e0",
@@ -173,7 +175,7 @@ _private.sticky_color = "#f6a2ed"
 -- => Saving and loading of color rules
 -- ============================================================
 local table = table
-local t = require("nice.table")
+local t = require("src.lib.nice.table")
 table.save = t.save
 table.load = t.load
 
@@ -197,6 +199,7 @@ end
 
 -- Fetches the color rule for the given client instance
 local function get_color_rule(c) return _private.color_rules[c.instance] end
+
 -- ------------------------------------------------------------
 
 -- Returns the hex color for the pixel at the given coordinates on the screen
@@ -204,8 +207,8 @@ local function get_pixel_at(x, y)
     local pixbuf = pixbuf_get_from_window(get_default_root_window(), x, y, 1, 1)
     local bytes = pixbuf:get_pixels()
     return "#" ..
-               bytes:gsub(
-                   ".", function(c) return ("%02x"):format(c:byte()) end)
+        bytes:gsub(
+            ".", function(c) return ("%02x"):format(c:byte()) end)
 end
 
 -- Determines the dominant color of the client's top region
@@ -224,12 +227,12 @@ local function get_dominant_color(client)
     for x_pos = 0, x_lim, 2 do
         for y_pos = 0, 8, 1 do
             pb = pixbuf_get_from_surface(
-                     content, x_offset + x_pos, y_offset + y_pos, 1, 1)
+                content, x_offset + x_pos, y_offset + y_pos, 1, 1)
             bytes = pb:get_pixels()
             color = "#" ..
-                        bytes:gsub(
-                            ".",
-                            function(c)
+                bytes:gsub(
+                    ".",
+                    function(c)
                         return ("%02x"):format(c:byte())
                     end)
             if not tally[color] then
@@ -290,9 +293,9 @@ local function create_button_image(name, is_focused, event, is_on)
         end
         -- Then the color is lightened if the button is being hovered over, or darkened if it is being pressed, otherwise it is left as is
         button_color =
-            (event == "hover") and colors.lighten(button_color, 25) or
-                (event == "press") and colors.darken(button_color, 25) or
-                button_color
+        (event == "hover") and colors.lighten(button_color, 25) or
+            (event == "press") and colors.darken(button_color, 25) or
+            button_color
         -- Save the generate color because why not lol
         _private[key_color] = button_color
     end
@@ -315,8 +318,8 @@ local function create_titlebar_button(c, name, button_callback, property)
         local tooltip = atooltip {
             timer_function = function()
                 return _private.tooltip_messages[name ..
-                           (property and
-                               (c[property] and "_active" or "_inactive") or "")]
+                    (property and
+                        (c[property] and "_active" or "_inactive") or "")]
             end,
             delay_show = 0.5,
             margins_leftright = 12,
@@ -334,11 +337,12 @@ local function create_titlebar_button(c, name, button_callback, property)
         if property then
             is_on = c[property]
             button_img.image = create_button_image(
-                                   name, is_focused, event, is_on)
+                name, is_focused, event, is_on)
         else
             button_img.image = create_button_image(name, is_focused, event)
         end
     end
+
     -- Update the button when the client gains/loses focus
     c:connect_signal("unfocus", update)
     c:connect_signal("focus", update)
@@ -347,28 +351,28 @@ local function create_titlebar_button(c, name, button_callback, property)
     -- Update the button on mouse hover/leave
     button_img:connect_signal(
         "mouse::enter", function()
-            event = "hover"
-            update()
-        end)
+        event = "hover"
+        update()
+    end)
     button_img:connect_signal(
         "mouse::leave", function()
-            event = "normal"
-            update()
-        end)
+        event = "normal"
+        update()
+    end)
     -- The button is updated on both click and release, but the call back is executed on release
     button_img.buttons = abutton(
-                             {}, nice.MB_LEFT, function()
+        {}, nice.MB_LEFT, function()
             event = "press"
             update()
         end, function()
-            if button_callback then
-                event = "normal"
-                button_callback()
-            else
-                event = "hover"
-            end
-            update()
-        end)
+        if button_callback then
+            event = "normal"
+            button_callback()
+        else
+            event = "hover"
+        end
+        update()
+    end)
     button_img.id = "button_image"
     update()
     return wibox.widget {
@@ -403,84 +407,85 @@ local function get_titlebar_mouse_bindings(c)
     local buttons = {
         abutton(
             {}, _private.mb_move, function()
-                local cx, cy = _G.mouse.coords().x, _G.mouse.coords().y
-                local delta = double_click_time_window_ms / 1000
-                clicks = clicks + 1
-                if clicks == 2 then
-                    local nx, ny = _G.mouse.coords().x, _G.mouse.coords().y
-                    -- The second click is only counted as a double click if it is within the neighborhood of the first click's position, and occurs within the set time window
-                    if abs(cx - nx) <= tolerance and abs(cy - ny) <= tolerance then
-                        if shade_enabled then
-                            _private.shade_roll_down(c)
-                        end
-                        c.maximized = not c.maximized
+            local cx, cy = _G.mouse.coords().x, _G.mouse.coords().y
+            local delta = double_click_time_window_ms / 1000
+            clicks = clicks + 1
+            if clicks == 2 then
+                local nx, ny = _G.mouse.coords().x, _G.mouse.coords().y
+                -- The second click is only counted as a double click if it is within the neighborhood of the first click's position, and occurs within the set time window
+                if abs(cx - nx) <= tolerance and abs(cy - ny) <= tolerance then
+                    if shade_enabled then
+                        _private.shade_roll_down(c)
                     end
-                else
-                    if shade_enabled and c._nice_window_shade_up then
-                        -- _private.shade_roll_down(c)
-                        awful.mouse.wibox.move(c._nice_window_shade)
-                    else
-                        c:activate{context = "titlebar", action = "mouse_move"}
-                    end
+                    c.maximized = not c.maximized
                 end
-                -- Start a timer to clear the click count
-                gtimer_weak_start_new(
-                    delta, function() clicks = 0 end)
-            end),
+            else
+                if shade_enabled and c._nice_window_shade_up then
+                    -- _private.shade_roll_down(c)
+                    awful.mouse.wibox.move(c._nice_window_shade)
+                else
+                    c:activate { context = "titlebar", action = "mouse_move" }
+                end
+            end
+            -- Start a timer to clear the click count
+            gtimer_weak_start_new(
+                delta, function() clicks = 0 end)
+        end),
         abutton(
             {}, _private.mb_contextmenu, function()
 
-                local menu_items = {}
-                local function add_item(text, callback)
-                    menu_items[#menu_items + 1] = {text, callback}
-                end
-                -- TODO: Add client control options as menu entries for options that haven't had their buttons added
-                add_item(
-                    "Redo Window Decorations", function()
-                        c._nice_base_color = get_dominant_color(c)
-                        set_color_rule(c, c._nice_base_color)
-                        _private.add_window_decorations(c)
-                    end)
-                local picked_color
-                add_item(
-                    "Manually Pick Color", function()
-                        _G.mousegrabber.run(
-                            function(m)
-                                if m.buttons[1] then
-                                    c._nice_base_color = get_pixel_at(m.x, m.y)
-                                    set_color_rule(c, c._nice_base_color)
-                                    _private.add_window_decorations(c)
-                                    return false
-                                end
-                                return true
-                            end, "crosshair")
-                    end)
-                add_item("Nevermind...", function() end)
-                if c._nice_right_click_menu then
-                    c._nice_right_click_menu:hide()
-                end
-                c._nice_right_click_menu =
-                    awful.menu {
-                        items = menu_items,
-                        theme = _private.context_menu_theme,
-                    }
-                c._nice_right_click_menu:show()
-            end),
+            local menu_items = {}
+            local function add_item(text, callback)
+                menu_items[#menu_items + 1] = { text, callback }
+            end
+
+            -- TODO: Add client control options as menu entries for options that haven't had their buttons added
+            add_item(
+                "Redo Window Decorations", function()
+                c._nice_base_color = get_dominant_color(c)
+                set_color_rule(c, c._nice_base_color)
+                _private.add_window_decorations(c)
+            end)
+            local picked_color
+            add_item(
+                "Manually Pick Color", function()
+                _G.mousegrabber.run(
+                    function(m)
+                        if m.buttons[1] then
+                            c._nice_base_color = get_pixel_at(m.x, m.y)
+                            set_color_rule(c, c._nice_base_color)
+                            _private.add_window_decorations(c)
+                            return false
+                        end
+                        return true
+                    end, "crosshair")
+            end)
+            add_item("Nevermind...", function() end)
+            if c._nice_right_click_menu then
+                c._nice_right_click_menu:hide()
+            end
+            c._nice_right_click_menu =
+            awful.menu {
+                items = menu_items,
+                theme = _private.context_menu_theme,
+            }
+            c._nice_right_click_menu:show()
+        end),
         abutton(
             {}, _private.mb_resize, function()
-                c:activate{context = "mouse_click", action = "mouse_resize"}
-            end),
+            c:activate { context = "mouse_click", action = "mouse_resize" }
+        end),
     }
 
     if _private.win_shade_enabled then
         buttons[#buttons + 1] = abutton(
-                                    {}, _private.mb_win_shade_rollup,
-                                    function()
+            {}, _private.mb_win_shade_rollup,
+            function()
                 _private.shade_roll_up(c)
             end)
         buttons[#buttons + 1] = abutton(
-                                    {}, _private.mb_win_shade_rolldown,
-                                    function()
+            {}, _private.mb_win_shade_rolldown,
+            function()
                 _private.shade_roll_down(c)
             end)
     end
@@ -501,17 +506,18 @@ local function create_titlebar_title(c)
 
     local function update()
         local text_color = is_contrast_acceptable(
-                               title_color_light, client_color) and
-                               title_color_light or title_color_dark
+            title_color_light, client_color) and
+            title_color_light or title_color_dark
         title_widget.markup =
-            ("<span foreground='%s' font='%s'>%s</span>"):format(
-                text_color, _private.titlebar_font, c.name)
+        ("<span foreground='%s' font='%s'>%s</span>"):format(
+            text_color, _private.titlebar_font, c.name)
     end
+
     c:connect_signal("property::name", update)
     c:connect_signal(
         "unfocus", function()
-            title_widget.opacity = title_unfocused_opacity
-        end)
+        title_widget.opacity = title_unfocused_opacity
+    end)
     c:connect_signal("focus", function() title_widget.opacity = 1 end)
     update()
     local titlebar_font_height = get_font_height(_private.titlebar_font)
@@ -531,23 +537,23 @@ local function get_titlebar_item(c, name)
         return create_titlebar_button(c, name, function() c:kill() end)
     elseif name == "maximize" then
         return create_titlebar_button(
-                   c, name, function() c.maximized = not c.maximized end,
-                   "maximized")
+            c, name, function() c.maximized = not c.maximized end,
+            "maximized")
     elseif name == "minimize" then
         return create_titlebar_button(
-                   c, name, function() c.minimized = true end)
+            c, name, function() c.minimized = true end)
     elseif name == "ontop" then
         return create_titlebar_button(
-                   c, name, function() c.ontop = not c.ontop end, "ontop")
+            c, name, function() c.ontop = not c.ontop end, "ontop")
     elseif name == "floating" then
         return create_titlebar_button(
-                   c, name, function()
+            c, name, function()
                 c.floating = not c.floating
                 if c.floating then c.maximized = false end
             end, "floating")
     elseif name == "sticky" then
         return create_titlebar_button(
-                   c, name, function()
+            c, name, function()
                 c.sticky = not c.sticky
                 return c.sticky
             end, "sticky")
@@ -570,6 +576,7 @@ local function create_titlebar_items(c, group)
     end
     return titlebar_group_items
 end
+
 -- ------------------------------------------------------------
 
 -- Adds a window shade to the given client
@@ -590,20 +597,20 @@ local function add_window_shade(c, src_top, src_bottom)
         br = 4,
     }
     -- Need to use a manual layout because layout fixed seems to introduce a thin gap
-    src_top.point = {x = 0, y = 0}
+    src_top.point = { x = 0, y = 0 }
     src_top.forced_width = geo.width
-    src_bottom.point = {x = 0, y = _private.titlebar_height}
-    w.widget = {src_top, src_bottom, layout = wlayout.manual}
+    src_bottom.point = { x = 0, y = _private.titlebar_height }
+    w.widget = { src_top, src_bottom, layout = wlayout.manual }
     -- Clean up resources when a client is killed
     c:connect_signal(
         "request::unmanage", function()
-            if c._nice_window_shade then
-                c._nice_window_shade.visible = false
-                c._nice_window_shade = nil
-            end
-            -- Clean up
-            collectgarbage("collect")
-        end)
+        if c._nice_window_shade then
+            c._nice_window_shade.visible = false
+            c._nice_window_shade = nil
+        end
+        -- Clean up
+        collectgarbage("collect")
+    end)
     c._nice_window_shade_up = false
     c._nice_window_shade = w
 end
@@ -611,7 +618,7 @@ end
 -- Shows the window contents
 function _private.shade_roll_down(c)
     if not c._nice_window_shade_up then return end
-    c:geometry{x = c._nice_window_shade.x, y = c._nice_window_shade.y}
+    c:geometry { x = c._nice_window_shade.x, y = c._nice_window_shade.y }
     c:activate()
     c._nice_window_shade.visible = false
     c._nice_window_shade_up = false
@@ -646,7 +653,7 @@ function _private.add_window_decorations(c)
         return color_lighten(client_color, amount)
     end
     local darken =
-        function(amount) return color_darken(client_color, amount) end
+    function(amount) return color_darken(client_color, amount) end
     -- > Color computations
     local luminance = relative_luminance(client_color)
     local lighten_amount = rel_lighten(luminance)
@@ -655,25 +662,25 @@ function _private.add_window_decorations(c)
     local stroke_color_inner_top = lighten(lighten_amount)
     local stroke_color_inner_sides = lighten(
 
-                                        
-                                             lighten_amount *
-                                                 stroke_inner_sides_lighten_mul)
+
+        lighten_amount *
+        stroke_inner_sides_lighten_mul)
     local stroke_color_inner_bottom = lighten(
 
-                                         
-                                              lighten_amount *
-                                                  stroke_inner_bottom_lighten_mul)
+
+        lighten_amount *
+        stroke_inner_bottom_lighten_mul)
     -- Outer strokes
     local stroke_color_outer_top = darken(
-                                       darken_amount *
-                                           stroke_outer_top_darken_mul)
+        darken_amount *
+        stroke_outer_top_darken_mul)
     local stroke_color_outer_sides = darken(darken_amount)
     local stroke_color_outer_bottom = darken(darken_amount)
     local titlebar_height = _private.titlebar_height
     local background_fill_top = gradient(
-                                    lighten(titlebar_gradient_c1_lighten),
-                                    client_color, titlebar_height, 0,
-                                    titlebar_gradient_c2_offset)
+        lighten(titlebar_gradient_c1_lighten),
+        client_color, titlebar_height, 0,
+        titlebar_gradient_c2_offset)
     -- The top left corner of the titlebar
     local corner_top_left_img = create_corner_top_left {
         background_source = background_fill_top,
@@ -707,7 +714,7 @@ function _private.add_window_decorations(c)
     }
     -- Create the titlebar
     local titlebar = awful.titlebar(
-                         c, {size = titlebar_height, bg = "transparent"})
+        c, { size = titlebar_height, bg = "transparent" })
     -- Arrange the graphics
     titlebar.widget = {
         imagebox(corner_top_left_img, false),
@@ -740,8 +747,8 @@ function _private.add_window_decorations(c)
     local resize_button = {
         abutton(
             {}, 1, function()
-                c:activate{context = "mouse_click", action = "mouse_resize"}
-            end),
+            c:activate { context = "mouse_click", action = "mouse_resize" }
+        end),
     }
 
     -- The left side border
@@ -758,31 +765,31 @@ function _private.add_window_decorations(c)
     -- The right side border
     local right_border_img = shapes.flip(left_border_img, "horizontal")
     local left_side_border = awful.titlebar(
-                                 c, {
-            position = "left",
-            size = 2,
-            bg = client_color,
-            widget = wcontainer_background,
-        })
-    left_side_border:setup{
+        c, {
+        position = "left",
+        size = 2,
+        bg = client_color,
+        widget = wcontainer_background,
+    })
+    left_side_border:setup {
         buttons = resize_button,
         widget = wcontainer_background,
         bgimage = left_border_img,
     }
     local right_side_border = awful.titlebar(
-                                  c, {
-            position = "right",
-            size = 2,
-            bg = client_color,
-            widget = wcontainer_background,
-        })
-    right_side_border:setup{
+        c, {
+        position = "right",
+        size = 2,
+        bg = client_color,
+        widget = wcontainer_background,
+    })
+    right_side_border:setup {
         widget = wcontainer_background,
         bgimage = right_border_img,
         buttons = resize_button,
     }
     local corner_bottom_left_img = shapes.flip(
-                                       create_corner_top_left {
+        create_corner_top_left {
             color = client_color,
             radius = bottom_edge_height,
             height = bottom_edge_height,
@@ -799,9 +806,9 @@ function _private.add_window_decorations(c)
             stroke_width_outer = 2,
         }, "vertical")
     local corner_bottom_right_img = shapes.flip(
-                                        corner_bottom_left_img, "horizontal")
+        corner_bottom_left_img, "horizontal")
     local bottom_edge = shapes.flip(
-                            create_edge_top_middle {
+        create_edge_top_middle {
             color = client_color,
             height = bottom_edge_height,
             background_source = background_fill_top,
@@ -814,11 +821,11 @@ function _private.add_window_decorations(c)
             width = _private.max_width,
         }, "vertical")
     local bottom = awful.titlebar(
-                       c, {
-            size = bottom_edge_height,
-            bg = "transparent",
-            position = "bottom",
-        })
+        c, {
+        size = bottom_edge_height,
+        bg = "transparent",
+        position = "bottom",
+    })
     bottom.widget = wibox.widget {
         imagebox(corner_bottom_left_img, false),
         -- {widget = wcontainer_background, bgimage = bottom_edge},
@@ -835,27 +842,27 @@ function _private.add_window_decorations(c)
     if _private.no_titlebar_maximized then
         c:connect_signal(
             "property::maximized", function()
-                if c.maximized then
-                    local curr_screen_workarea = client.focus.screen.workarea
-                    awful.titlebar.hide(c)
-                    c.shape = nil
-                    c:geometry{
-                        x = curr_screen_workarea.x,
-                        y = curr_screen_workarea.y,
-                        width = curr_screen_workarea.width,
-                        height = curr_screen_workarea.height,
-                    }
-                else
-                    awful.titlebar.show(c)
-                    -- Shape the client
-                    c.shape = shapes.rounded_rect {
-                        tl = _private.titlebar_radius,
-                        tr = _private.titlebar_radius,
-                        bl = 4,
-                        br = 4,
-                    }
-                end
-            end)
+            if c.maximized then
+                local curr_screen_workarea = client.focus.screen.workarea
+                awful.titlebar.hide(c)
+                c.shape = nil
+                c:geometry {
+                    x = curr_screen_workarea.x,
+                    y = curr_screen_workarea.y,
+                    width = curr_screen_workarea.width,
+                    height = curr_screen_workarea.height,
+                }
+            else
+                awful.titlebar.show(c)
+                -- Shape the client
+                c.shape = shapes.rounded_rect {
+                    tl = _private.titlebar_radius,
+                    tr = _private.titlebar_radius,
+                    bl = 4,
+                    br = 4,
+                }
+            end
+        end)
     end
 
     -- Clean up
@@ -880,7 +887,7 @@ local function validate_mb_bindings()
         "mb_win_shade_rollup",
         "mb_win_shade_rolldown",
     }
-    local mb_specified = {false, false, false, false, false}
+    local mb_specified = { false, false, false, false, false }
     local mb
     local mb_conflict_test
     for i, action_mb in ipairs(action_mbs) do
@@ -893,9 +900,9 @@ local function validate_mb_bindings()
             else
                 error(
 
-                   
-                        ("%s and %s can not be bound to the same mouse button"):format(
-                            action_mb, mb_conflict_test))
+
+                    ("%s and %s can not be bound to the same mouse button"):format(
+                        action_mb, mb_conflict_test))
             end
         else
 
@@ -929,43 +936,43 @@ function nice.initialize(args)
 
     _G.client.connect_signal(
         "request::titlebars", function(c)
-            -- Callback 
-            c._cb_add_window_decorations =
-                function()
-                    gtimer_weak_start_new(
-                        0.25, function()
-                            c._nice_base_color = get_dominant_color(c)
-                            set_color_rule(c, c._nice_base_color)
-                            _private.add_window_decorations(c)
-                            -- table.save(_private, config_dir .. "/nice/private")
-                            c:disconnect_signal(
-                                "request::activate",
-                                c._cb_add_window_decorations)
-                        end)
-                end -- _cb_add_window_decorations
-            -- Check if a color rule already exists...
-            local base_color = get_color_rule(c)
-            if base_color then
-                -- If so, use that color rule
-                c._nice_base_color = base_color
+        -- Callback
+        c._cb_add_window_decorations =
+        function()
+            gtimer_weak_start_new(
+                0.25, function()
+                c._nice_base_color = get_dominant_color(c)
+                set_color_rule(c, c._nice_base_color)
                 _private.add_window_decorations(c)
-            else
-                -- Otherwise use the default titlebar temporarily
-                c._nice_base_color = _private.titlebar_color
-                _private.add_window_decorations(c)
-                -- Connect a signal to determine the client color and then re-decorate it
-                c:connect_signal(
-                    "request::activate", c._cb_add_window_decorations)
-            end
-            -- Shape the client
-            c.shape = shapes.rounded_rect {
-                tl = _private.titlebar_radius,
-                tr = _private.titlebar_radius,
-                bl = 4,
-                br = 4,
-            }
-        end)
+                -- table.save(_private, config_dir .. "/nice/private")
+                c:disconnect_signal(
+                    "request::activate",
+                    c._cb_add_window_decorations)
+            end)
+        end -- _cb_add_window_decorations
+        -- Check if a color rule already exists...
+        local base_color = get_color_rule(c)
+        if base_color then
+            -- If so, use that color rule
+            c._nice_base_color = base_color
+            _private.add_window_decorations(c)
+        else
+            -- Otherwise use the default titlebar temporarily
+            c._nice_base_color = _private.titlebar_color
+            _private.add_window_decorations(c)
+            -- Connect a signal to determine the client color and then re-decorate it
+            c:connect_signal(
+                "request::activate", c._cb_add_window_decorations)
+        end
+        -- Shape the client
+        c.shape = shapes.rounded_rect {
+            tl = _private.titlebar_radius,
+            tr = _private.titlebar_radius,
+            bl = 4,
+            br = 4,
+        }
+    end)
 end
 
 return setmetatable(
-           nice, {__call = function(_, ...) return nice.initialize(...) end})
+    nice, { __call = function(_, ...) return nice.initialize(...) end })
