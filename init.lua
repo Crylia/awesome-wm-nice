@@ -531,6 +531,15 @@ local function create_titlebar_title(c)
     }
 end
 
+local function create_titlebar_icon(c)
+    return wibox.widget {
+        awful.titlebar.widget.iconwidget(c),
+        widget = wcontainer_margin,
+        top = 10,
+        bottom = 10,
+    }
+end
+
 -- Returns a titlebar item
 local function get_titlebar_item(c, name)
     if name == "close" then
@@ -559,6 +568,8 @@ local function get_titlebar_item(c, name)
             end, "sticky")
     elseif name == "title" then
         return create_titlebar_title(c)
+    elseif name == "icon" then
+        return create_titlebar_icon(c)
     end
 end
 
