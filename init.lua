@@ -846,35 +846,56 @@ function _private.add_window_decorations(c)
         layout = wlayout_align_horizontal,
         buttons = resize_button,
     }
-    if _private.win_shade_enabled then
-        add_window_shade(c, titlebar.widget, bottom.widget)
+    if not c.floating then
+        awful.titlebar.hide(c)
     end
-
-    if _private.no_titlebar_maximized then
-        c:connect_signal(
-            "property::maximized", function()
-            if c.maximized then
-                local curr_screen_workarea = client.focus.screen.workarea
-                awful.titlebar.hide(c)
-                c.shape = nil
-                c:geometry {
-                    x = curr_screen_workarea.x,
-                    y = curr_screen_workarea.y,
-                    width = curr_screen_workarea.width,
-                    height = curr_screen_workarea.height,
-                }
-            else
-                awful.titlebar.show(c)
-                -- Shape the client
-                c.shape = shapes.rounded_rect {
-                    tl = _private.titlebar_radius,
-                    tr = _private.titlebar_radius,
-                    bl = 4,
-                    br = 4,
-                }
-            end
-        end)
-    end
+    c:connect_signal(
+        "property::maximized", function()
+        if c.maximized then
+            local curr_screen_workarea = client.focus.screen.workarea
+            awful.titlebar.hide(c)
+            c.shape = nil
+            c:geometry {
+                x = curr_screen_workarea.x,
+                y = curr_screen_workarea.y,
+                width = curr_screen_workarea.width,
+                height = curr_screen_workarea.height,
+            }
+        else
+            awful.titlebar.show(c)
+            -- Shape the client
+            c.shape = shapes.rounded_rect {
+                tl = _private.titlebar_radius,
+                tr = _private.titlebar_radius,
+                bl = 4,
+                br = 4,
+            }
+        end
+    end)
+    c:connect_signal(
+        "property::floating", function()
+        if not c.floating then
+            if not client or not client.focus then return end
+            local curr_screen_workarea = client.focus.screen.workarea
+            awful.titlebar.hide(c)
+            c.shape = nil
+            c:geometry {
+                x = curr_screen_workarea.x,
+                y = curr_screen_workarea.y,
+                width = curr_screen_workarea.width,
+                height = curr_screen_workarea.height,
+            }
+        else
+            awful.titlebar.show(c)
+            -- Shape the client
+            c.shape = shapes.rounded_rect {
+                tl = _private.titlebar_radius,
+                tr = _private.titlebar_radius,
+                bl = 4,
+                br = 4,
+            }
+        end
+    end)
 
     -- Clean up
     collectgarbage("collect")
@@ -983,6 +1004,32 @@ function nice.initialize(args)
             br = 4,
         }
     end)
+
+    _G.client.connect_signal(
+        "request::manage", function(c)
+        if not c.floating then
+            if not client or not client.focus then return end
+            local curr_screen_workarea = client.focus.screen.workarea
+            awful.titlebar.hide(c)
+            c.shape = nil
+            c:geometry {
+                x = curr_screen_workarea.x,
+                y = curr_screen_workarea.y,
+                width = curr_screen_workarea.width,
+                height = curr_screen_workarea.height,
+            }
+        else
+            awful.titlebar.show(c)
+            -- Shape the client
+            c.shape = shapes.rounded_rect {
+                tl = _private.titlebar_radius,
+                tr = _private.titlebar_radius,
+                bl = 4,
+                br = 4,
+            }
+        end
+    end
+    )
 end
 
 return setmetatable(
