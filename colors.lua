@@ -2,41 +2,22 @@
 -- Provides utility functions for handling colors
 -- ============================================================
 local math = math
-local floor = math.floor
-local max = math.max
-local min = math.min
-local pow = math.pow
-local random = math.random
 local gcolor = require("gears.color")
-local parse_color = gcolor.parse_color
 
 -- Returns a value that is clipped to interval edges if it falls outside the interval
-local function clip(num, min_num, max_num) return
-    max(min(num, max_num), min_num) end
+local function clip(num, min_num, max_num) return math.max(math.min(num, max_num), min_num)
+end
 
 -- Converts the given hex color to normalized rgba
 local function hex2rgb(color)
-    -- color = color:gsub("#", "")
-    -- local strlen = color:len()
-    -- if strlen == 6 then
-    --     return tonumber("0x" .. color:sub(1, 2)) / 255,
-    --            tonumber("0x" .. color:sub(3, 4)) / 255,
-    --            tonumber("0x" .. color:sub(5, 6)) / 255, 1
-    -- end
-    -- if strlen == 8 then
-    --     return tonumber("0x" .. color:sub(1, 2)) / 255,
-    --            tonumber("0x" .. color:sub(3, 4)) / 255,
-    --            tonumber("0x" .. color:sub(5, 6)) / 255,
-    --            tonumber("0x" .. color:sub(7, 8)) / 255
-    -- end
-    return parse_color(color)
+    return gcolor.parse_color(color)
 end
 
 -- Converts the given hex color to hsv
 local function hex2hsv(color)
     local r, g, b = hex2rgb(color)
-    local C_max = max(r, g, b)
-    local C_min = min(r, g, b)
+    local C_max = math.max(r, g, b)
+    local C_min = math.min(r, g, b)
     local delta = C_max - C_min
     local H, S, V
     if delta == 0 then
@@ -81,16 +62,16 @@ local function hsv2hex(H, S, V)
         r_, g_, b_ = C, 0, X
     end
     local r, g, b = (r_ + m) * 255, (g_ + m) * 255, (b_ + m) * 255
-    return ("#%02x%02x%02x"):format(floor(r), floor(g), floor(b))
+    return ("#%02x%02x%02x"):format(math.floor(r), math.floor(g), math.floor(b))
 end
 
 -- Calculates the relative luminance of the given color
 local function relative_luminance(color)
     local r, g, b = hex2rgb(color)
     local function from_sRGB(u)
-        return u <= 0.0031308 and 25 * u / 323 or
-                   pow(((200 * u + 11) / 211), 12 / 5)
+        return u <= 0.0031308 and 25 * u / 323 or ((200 * u + 11) / 211) ^ (12 / 5)
     end
+
     return 0.2126 * from_sRGB(r) + 0.7152 * from_sRGB(g) + 0.0722 * from_sRGB(b)
 end
 
@@ -106,7 +87,7 @@ end
 
 -- Returns a bright-ish, saturated-ish, color of random hue
 local function rand_hex(lb_angle, ub_angle)
-    return hsv2hex(random(lb_angle or 0, ub_angle or 360), 70, 90)
+    return hsv2hex(math.random(lb_angle or 0, ub_angle or 360), 70, 90)
 end
 
 -- Rotates the hue of the given hex color by the specified angle (in degrees)
@@ -124,9 +105,9 @@ local function lighten(color, amount)
     r = 255 * r
     g = 255 * g
     b = 255 * b
-    r = r + floor(2.55 * amount)
-    g = g + floor(2.55 * amount)
-    b = b + floor(2.55 * amount)
+    r = r + math.floor(2.55 * amount)
+    g = g + math.floor(2.55 * amount)
+    b = b + math.floor(2.55 * amount)
     r = r > 255 and 255 or r
     g = g > 255 and 255 or g
     b = b > 255 and 255 or b
@@ -140,9 +121,9 @@ local function darken(color, amount)
     r = 255 * r
     g = 255 * g
     b = 255 * b
-    r = max(0, r - floor(r * (amount / 100)))
-    g = max(0, g - floor(g * (amount / 100)))
-    b = max(0, b - floor(b * (amount / 100)))
+    r = math.max(0, r - math.floor(r * (amount / 100)))
+    g = math.max(0, g - math.floor(g * (amount / 100)))
+    b = math.max(0, b - math.floor(b * (amount / 100)))
     return ("#%02x%02x%02x"):format(r, g, b)
 end
 

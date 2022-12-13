@@ -1,15 +1,16 @@
 --[[
     Courtesy of: http://lua-users.org/wiki/SaveTableToFile
-]] local function exportstring(s) return string.format("%q", s) end
+]]
+local function exportstring(s) return string.format("%q", s) end
 
 --  The Save Function
 local function save(tbl, filename)
     local charS, charE = "   ", "\n"
     local file, err = io.open(filename, "wb")
-    if err then return err end
+    if not file or err then return err end
 
     -- Initialize variables for save procedure
-    local tables, lookup = {tbl}, {[tbl] = 1}
+    local tables, lookup = { tbl }, { [tbl] = 1 }
     file:write("return {" .. charE)
 
     for idx, t in ipairs(tables) do
@@ -86,7 +87,7 @@ local function load(sfile)
         for i, v in pairs(tables[idx]) do
             if type(v) == "table" then tables[idx][i] = tables[v[1]] end
             if type(i) == "table" and tables[i[1]] then
-                table.insert(tolinki, {i, tables[i[1]]})
+                table.insert(tolinki, { i, tables[i[1]] })
             end
         end
         -- link indices
@@ -97,4 +98,4 @@ local function load(sfile)
     return tables[1]
 end
 
-return {save = save, load = load}
+return { save = save, load = load }
